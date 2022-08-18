@@ -1,0 +1,11 @@
+Aria2:
+  host: http://localhost
+  port: 6800
+  secret: "secret"
+Telegram:
+  api_id: "api_id"
+  api_hash: "api_hash"
+  bot_token: "bot_token"
+  chat_id: "chat_id"
+  admins:
+    - "admins"
