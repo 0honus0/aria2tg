@@ -1,3 +1,4 @@
+from genericpath import isfile
 import ffmpeg
 
 import os
@@ -12,7 +13,7 @@ def preprocess_video( file_name : str , size : int) -> List[str]:
     """
     video_list = []
     
-    if get_video_suffix(file_name) != "mp4":
+    if get_video_suffix(file_name) != "mp4" or not judge_video_mp4(file_name) :
         if judge_codec(file_name):
             file_name = convert_h264_to_mp4(file_name)
         else:
@@ -77,6 +78,15 @@ def timestamp_to_time( timestamp : float) -> str:
     """
     return time.strftime("%H:%M:%S", time.gmtime(timestamp))
 
+def judge_video_mp4(file_name : str) -> bool:
+    """
+    判断视频是否为mp4格式
+    """
+    video_file = ffmpeg.probe(file_name)
+    if video_file["format"]["format_name"] == "mov,mp4,m4a,3gp,3g2,mj2":
+        return True
+    return False
+
 def judge_codec(file_name : str) -> bool:
     """
     判断是否为mp4格式
@@ -86,13 +96,23 @@ def judge_codec(file_name : str) -> bool:
         return True
     return False
 
-def remove_file(file_name : str):
+def remove_file(file_name : str) -> None:
     """
-    删除文件
+    删除封面
     """
     thumb_name = ".".join(file_name.split("/")[-1].split(".")[:-1]) + "_thumb.jpeg"
-    os.remove(thumb_name)
-    os.remove(file_name)
+    if os.path.isfile(thumb_name):
+        os.remove(thumb_name)
+    if os.path.isfile(file_name):
+        os.remove(file_name)
+
+def remove_thumb(file_name : str) -> None:
+    """
+    删除封面
+    """
+    thumb_name = ".".join(file_name.split("/")[-1].split(".")[:-1]) + "_thumb.jpeg"
+    if os.path.isfile(thumb_name):
+        os.remove(thumb_name)
 
 def convert_h264_to_mp4(file_name : str) -> str:
     """
@@ -109,7 +129,8 @@ def convert_h264_to_mp4(file_name : str) -> str:
 
 def convert_all_to_mp4(file_name : str) -> str:
     """
-    转换文件为mp4格式   后继优化转码参数
+    转换文件为mp4格式   
+    ToDo: 后继优化转码参数
     """
     output_name = ".".join(file_name.split("/")[-1].split(".")[:-1]) + ".mp4"
     (

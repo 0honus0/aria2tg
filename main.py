@@ -44,7 +44,7 @@ class Aria2Tg:
         '''
         def deco(func):
             async def deco_deco(client : "Client.client" , message : "Message" ):
-                if message.from_user.id in self.admins:
+                if message.from_user and ( message.from_user.id in self.admins):
                     await func(client , message)
                 else:
                     await self.bot.send_message(chat_id = message.chat.id , text = "非管理员无法使用指令")
@@ -137,6 +137,7 @@ class Aria2Tg:
         async def cancel(client : "Client.client" , message : "Message"):
             '''
             on /cancel command ,cancel download by gid
+            ToDo: cancel not upload complete download
             '''
             gids  = message.text.split(" ")[1:]
             text = ""
@@ -193,7 +194,6 @@ class Aria2Tg:
             text = "请选择一个文件：\n"
 
             InlineKey = []
-            # path = download.root_files_paths[0]
             download_name_md5 = md5(download.name)
             self.cache[download_name_md5] = []
             for file in download.files:
@@ -318,21 +318,17 @@ class Aria2Tg:
         #处理上传任务
         def _upload_run(sleep_time = 3):
             def send_file_thread(chat_id : str = None , file : str | BinaryIO = None, progress : callable  = None , progress_args: tuple = [] ):
-                try:
-                    self.app.start()
-                except:
-                    pass
-                
+                self.app.start()      
                 self.bot.edit_message_text(chat_id = progress_args[0] , message_id = progress_args[1] , text = "预处理视频中。。。")
                 video_list = preprocess_video(file , 3950)
                 self.bot.edit_message_text(chat_id = progress_args[0] , message_id = progress_args[1] , text = "预处理视频完成。。。")
                 count = len(video_list)
-                width = get_video_width(file)
-                height = get_video_height(file)
+                width = get_video_width(video_list[0])
+                height = get_video_height(video_list[0])
                 try:
                     if count == 1:
                         video = video_list[0]
-                        self.app.send_video(chat_id = chat_id , video = video , thumb = get_video_thumb(file_name = video , width = width, height = height) , progress = progress , progress_args = progress_args , caption = progress_args[3] , width = width, height = height , duration = int(get_video_duration(file)))
+                        self.app.send_video(chat_id = chat_id , video = video , thumb = get_video_thumb(file_name = video , width = width, height = height) , progress = progress , progress_args = progress_args , caption = progress_args[3] , width = width, height = height , duration = int(get_video_duration(video_list[0])))
                     elif count > 1:
                         media = []
                         index = 0
@@ -344,17 +340,16 @@ class Aria2Tg:
                             index += 1
                         self.app.send_media_group(chat_id = chat_id , media = media , progress = progress , progress_args = progress_args)
 
-                    for video in video_list:
-                        remove_file(video)
-                    if get_video_suffix(file) != "mp4":
-                        new_file = file.replace(get_video_suffix(file) , "mp4")
-                        try:
-                            os.remove(new_file)
-                        except:
-                            pass
+                    if len(video_list) == 1:
+                        if video_list[0] != file:
+                            remove_file(video_list[0])
+                        remove_thumb(file)
+                    else:
+                        for video in video_list:
+                            remove_file(video)
                 except Exception as e:
                     self.bot.edit_message_text(chat_id = progress_args[0] , message_id = progress_args[1] , text = f"{progress_args[3]} {e}")
-                #self.app.stop()
+                self.app.stop()
 
             def trans_progress(current, total , *args):
                 chat_id    = args[0]
@@ -374,6 +369,7 @@ class Aria2Tg:
                     self.last_run_time = current_time
                     self.bot.edit_message_text(chat_id = chat_id , message_id = message_id , text = text)
 
+            #self.app.start()
             while True:
                 if not self.upload_queue.empty():
                     chat_id , path = self.upload_queue.get()
@@ -383,6 +379,7 @@ class Aria2Tg:
                     send_file_thread(self.chat_id , str(path) , trans_progress , [chat_id, message.id, interval, name])
                     self.upload_queue.task_done()
                 time.sleep(sleep_time)
+            #self.app.stop()
 
         p = threading.Thread(target = _progress_run , args=(3,))
         p.daemon = True

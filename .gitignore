@@ -1,3 +1,8 @@
 .history/
 __pycache__/
 download/
+upload.py
+TG_Download_Bot.session
+TG_Download_Bot.session-journal
+TG_Download_User.session
+TG_Download_User.session-journal

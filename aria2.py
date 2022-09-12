@@ -69,7 +69,10 @@ class Aria2:
         downloads = self.get_downloads(gids)  
         for download in downloads:
             if download:
-                res = self.aria2.remove(downloads = [download], force = True, files = True, clean = True)[0]
+                try:
+                    res = self.aria2.remove(downloads = [download], force = True, files = True, clean = True)[0]
+                except:
+                    res = False
             else:
                 res = False
             result.append(res) 
