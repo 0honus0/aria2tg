@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 pyyaml = "*"
 aria2p = "*"
-pyrogram = "*"
+pyrogram = "==2.0.83"
 tgcrypto = "*"
 uvloop = "*"
 psutil = "*"

@@ -21,7 +21,7 @@ def preprocess_video( file_name : str , size : int) -> List[str]:
 
     file_size = os.path.getsize(file_name)
     #提供一部分冗余，防止TG发送失败
-    if file_size < (3.95)*1024*1024*1024:
+    if file_size < (3.90)*1024*1024*1024:
         return [file_name]
     video_total_duration = get_video_duration(file_name)
     video_current_duration = 0.00
@@ -47,7 +47,7 @@ def get_video_thumb(file_name : str , width : int = 1920 , height : int = 1080) 
     """
     video_file = ffmpeg.probe(file_name)
     video_total_duration = float(video_file["format"]["duration"])
-    ss = timestamp_to_time(video_total_duration / 2)
+    ss = timestamp_to_time(video_total_duration / 3)
     output_name = ".".join(file_name.split("/")[-1].split(".")[:-1]) + "_thumb.jpeg"
     (
         ffmpeg.input( file_name , ss= ss)
@@ -135,7 +135,7 @@ def convert_all_to_mp4(file_name : str) -> str:
     output_name = ".".join(file_name.split("/")[-1].split(".")[:-1]) + ".mp4"
     (
         ffmpeg.input(file_name)
-        .output(output_name)
+        .output(output_name , format='h264' , scale= '1920:1080')
         .overwrite_output()
         .run(quiet = True)
     )
@@ -146,11 +146,17 @@ def get_video_width(file_name : str) -> int:
     获取视频宽度
     """
     video_file = ffmpeg.probe(file_name)
-    return int(video_file["streams"][0]["width"])
+    try:
+        return int(video_file["streams"][0]["width"])
+    except:
+        return int(video_file["streams"][1]["width"])
 
 def get_video_height(file_name : str) -> int:
     """
     获取视频高度
     """
     video_file = ffmpeg.probe(file_name)
-    return int(video_file["streams"][0]["height"])
+    try:
+        return int(video_file["streams"][0]["height"])
+    except:
+        return int(video_file["streams"][1]["height"])
